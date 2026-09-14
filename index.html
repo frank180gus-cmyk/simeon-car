@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simeón Car - Sistema de Gestión</title>
+  
+  <link rel="icon" type="image/png" href="https://i.ibb.co/yFY8Kfct/Logo-Simeon.png">
+
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+    body { display: flex; height: 100vh; background: #060b17; color: #f8fafc; overflow: hidden; }
+
+    .mobile-header {
+      display: none; background: #0c1527; color: #ffffff; padding: 12px 16px;
+      align-items: center; justify-content: space-between; position: fixed;
+      top: 0; left: 0; right: 0; height: 58px; z-index: 50;
+      border-bottom: 1px solid #1e293b;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .btn-burger { background: transparent; border: none; color: #38bdf8; font-size: 26px; cursor: pointer; }
+
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 60; }
+    .sidebar-overlay.active { display: block; }
+    aside {
+      width: 260px; background: #0c1527; display: flex; flex-direction: column;
+      flex-shrink: 0; z-index: 70; transition: transform 0.3s ease;
+      border-right: 1px solid #1e293b;
+    }
+    .brand {
+      padding: 18px; font-size: 18px; font-weight: 800; background: #060b17;
+      border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand-content { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #ffffff;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+    }
+    .brand-title {
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(14, 165, 233, 0.5);
+    }
+    .btn-close-aside { display: none; background: transparent; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; }
+    
+    nav { display: flex; flex-direction: column; padding: 12px 10px; gap: 6px; flex: 1; overflow-y: auto; }
+    .nav-btn {
+      background: transparent; color: #94a3b8; border: none; padding: 11px 14px;
+      border-radius: 8px; text-align: left; font-size: 13.5px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;
+    }
+    .nav-btn:hover { background: #1e293b; color: #ffffff; }
+    .nav-btn.active {
+      background: #0284c7; color: #ffffff; font-weight: 700;
+      box-shadow: 0 0 14px rgba(2, 132, 199, 0.5);
+    }
+
+    main { flex: 1; padding: 24px; overflow-y: auto; height: 100vh; background: #060b17; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    
+    .search-box { position: relative; display: flex; align-items: center; }
+    .search-box span { position: absolute; left: 12px; color: #94a3b8; }
+    .search-box input {
+      padding: 9px 12px 9px 36px; border: 1px solid #1e293b; border-radius: 8px;
+      font-size: 13.5px; width: 260px; background: #0c1527; color: #ffffff; outline: none;
+    }
+
+    .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #0284c7; color: #ffffff; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4); }
+    .btn-success { background: #059669; color: #ffffff; }
+    .btn-info { background: #0369a1; color: white; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-warning { background: #d97706; color: white; }
+
+    .card-table { background: #0c1527; border-radius: 10px; border: 1px solid #1e293b; overflow-x: auto; }
+    table { width: 100%; min-width: 680px; border-collapse: collapse; }
+    th { background: #060b17; padding: 12px 14px; font-size: 12px; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid #1e293b; }
+    td { padding: 12px 14px; font-size: 13.5px; border-bottom: 1px solid #1e293b; color: #e2e8f0; }
+    tr:hover { background: rgba(30, 41, 59, 0.5); }
+
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+    .badge-danger { background: rgba(220, 38, 38, 0.2); color: #f87171; }
+    .badge-success { background: rgba(5, 150, 105, 0.2); color: #34d399; }
+    .badge-hours { background: rgba(2, 132, 199, 0.2); color: #38bdf8; }
+
+    .pagination-bar {
+      display: flex; justify-content: center; align-items: center; gap: 12px;
+      padding: 14px; border-top: 1px solid #1e293b; background: #0c1527;
+    }
+
+    .grid-excel { width: 100%; min-width: 950px; border-collapse: collapse; }
+    .grid-excel th, .grid-excel td { border: 1px solid #1e293b; padding: 8px; font-size: 12px; text-align: center; }
+    .cell-libre { background: rgba(5, 150, 105, 0.1); color: #34d399; font-weight: 600; }
+    .cell-ocupado { background: rgba(220, 38, 38, 0.25); color: #fca5a5; font-weight: 600; text-align: left !important; padding-left: 8px !important; }
+    .cell-descanso { background: rgba(202, 138, 4, 0.25); color: #fde047; font-weight: 700; }
+    .cell-almuerzo { background: rgba(249, 115, 22, 0.2); color: #fb923c; font-weight: 800; letter-spacing: 1px; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; z-index: 100; padding: 16px; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: #0c1527; border-radius: 10px; width: 100%; max-width: 490px; border: 1px solid #1e293b; overflow: hidden; }
+    .modal-header { padding: 16px 20px; background: #060b17; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto; }
+    .modal-body label { font-size: 13px; font-weight: 600; color: #94a3b8; }
+    .modal-body input, .modal-body select {
+      width: 100%; padding: 10px; border: 1px solid #1e293b; border-radius: 6px;
+      font-size: 14px; background: #060b17; color: white; outline: none;
+    }
+    .modal-footer { padding: 14px 20px; background: #060b17; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end; gap: 10px; }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .mobile-header { display: flex; }
+      aside { position: fixed; top: 0; bottom: 0; left: 0; width: 270px; transform: translateX(-100%); }
+      aside.open { transform: translateX(0); }
+      .btn-close-aside { display: block; }
+      main { padding: 14px; margin-top: 58px; height: calc(100vh - 58px); }
+      .header-bar { flex-direction: column; align-items: stretch; }
+      .search-box input { width: 100%; }
+      .btn { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="mobile-header">
+    <button class="btn-burger" onclick="toggleSidebar(true)">☰</button>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="https://i.ibb.co/yFY8Kfct/Logo-Simeon.png" class="brand-logo" style="width:32px;height:32px;" alt="Logo">
+      <span class="brand-title" style="font-weight: 800; font-size: 16px;">Simeón Car</span>
+    </div>
+    <div style="width: 24px;"></div>
+  </header>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+  <aside id="sidebarNav">
+    <div class="brand">
+      <div class="brand-content">
+        <img src="https://i.ibb.co/yFY8Kfct/Logo-Simeon.png" class="brand-logo" alt="Logo">
+        <span class="brand-title">Simeón Car</span>
+      </div>
+      <button class="btn-close-aside" onclick="toggleSidebar(false)">✕</button>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="cambiarPestana('tabAlumnos')">👥 Estudiantes</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabPagos')">💵 Control de Pagos</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabProfesores')">📊 Horarios Profesores</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabClases')">🕒 Agenda de Clases</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabHoy')">📅 Alumnos de Hoy</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabVentas')">📈 Ventas / Caja de Hoy</button>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- 1. ESTUDIANTES -->
+    <section id="tabAlumnos" class="tab-pane active">
+      <div class="header-bar">
+        <h2>Padrón de Estudiantes</h2>
+        <div style="display:flex; gap:10px;">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="buscarAlumno" placeholder="Buscar DNI o Nombre..." oninput="filtrarAlumnos()">
+          </div>
+          <button class="btn btn-primary" onclick="abrirModalNuevoAlumno()">➕ Nuevo Alumno</button>
+        </div>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>DNI</th>
+              <th>Nombre Completo (A-Z)</th>
+              <th>Celular</th>
+              <th>Horas Restantes</th>
+              <th>Costo Total</th>
+              <th>Deuda</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tblAlumnosBody"></tbody>
+        </table>
+        <div class="pagination-bar">
+          <button class="btn btn-info" id="btnPrevAlumnos" onclick="cambiarPaginaAlumnos(-1)">Anterior</button>
+          <span id="txtPaginaAlumnos" style="font-size: 13px; font-weight: 700; color: #38bdf8;">Página 1 / 1</span>
+          <button class="btn btn-info" id="btnNextAlumnos" onclick="cambiarPaginaAlumnos(1)">Siguiente</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CONTROL DE PAGOS -->
+    <section id="tabPagos" class="tab-pane">
+      <div class="header-bar">
+        <h2>Control de Pagos y Abonos</h2>
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="buscarPago" placeholder="Buscar DNI o Nombre..." oninput="filtrarPagos()">
+        </div>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>DNI</th>
+              <th>Estudiante</th>
+              <th>Total</th>
+              <th>Abonado</th>
+              <th>Deuda Pendiente</th>
+              <th>Operaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tblPagosBody"></tbody>
+        </table>
+        <div class="pagination-bar">
+          <button class="btn btn-info" id="btnPrevPagos" onclick="cambiarPaginaPagos(-1)">Anterior</button>
+          <span id="txtPaginaPagos" style="font-size: 13px; font-weight: 700; color: #38bdf8;">Página 1 / 1</span>
+          <button class="btn btn-info" id="btnNextPagos" onclick="cambiarPaginaPagos(1)">Siguiente</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. HORARIOS PROFESORES -->
+    <section id="tabProfesores" class="tab-pane">
+      <div class="header-bar">
+        <div>
+          <h2>Turnos y Disponibilidad de Instructores</h2>
+          <p style="font-size:12px; color:#94a3b8;">Horario de 8:00 a.m. a 8:00 p.m. | Refrigerio: 1:00 p.m. - 2:00 p.m.</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="date" id="fechaFiltroExcel" onchange="renderExcelProfesores()" style="padding:8px; border-radius:6px; background:#0c1527; color:white; border:1px solid #1e293b;">
+          <button class="btn btn-info" onclick="abrirModalDescanso()">🏖️ Descansos por Fecha</button>
+          <button class="btn btn-warning" onclick="abrirModalDescansoFijo()">⚙️ Descanso Fijo Semanal</button>
+        </div>
+      </div>
+      <div class="card-table">
+        <table class="grid-excel">
+          <thead>
+            <tr>
+              <th>Horario</th>
+              <th>Luigui</th>
+              <th>Gustavo</th>
+              <th>Mora</th>
+              <th>José Luis</th>
+              <th>Luis</th>
+              <th>Antonio</th>
+              <th>Américo</th>
+              <th>Castañeda</th>
+              <th>Anderson</th>
+            </tr>
+          </thead>
+          <tbody id="gridProfesoresBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. AGENDA DE CLASES -->
+    <section id="tabClases" class="tab-pane">
+      <div class="header-bar">
+        <h2>Programación de Clases de Manejo</h2>
+        <button class="btn btn-primary" onclick="abrirModalClase()">➕ Agendar Sesión</button>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Horario Asignado</th>
+              <th>DNI</th>
+              <th>Alumno</th>
+              <th>Profesor</th>
+              <th>Horas</th>
+              <th>Operaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tblClasesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. HOY -->
+    <section id="tabHoy" class="tab-pane">
+      <div class="header-bar">
+        <h2>Alumnos Programados para Hoy</h2>
+        <span id="fechaActualTxt" style="font-weight:700; color:#38bdf8;"></span>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Horario</th>
+              <th>DNI</th>
+              <th>Alumno</th>
+              <th>Celular</th>
+              <th>Profesor</th>
+              <th>Duración</th>
+            </tr>
+          </thead>
+          <tbody id="tblHoyBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. VENTAS / CAJA DEL DÍA -->
+    <section id="tabVentas" class="tab-pane">
+      <div class="header-bar">
+        <div>
+          <h2>Caja y Ventas del Día</h2>
+          <p style="font-size: 12px; color: #94a3b8;">Registro de todos los abonos y pagos percibidos en la fecha elegida</p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="date" id="filtroFechaVentas" onchange="renderVentasDia()" style="padding:8px; border-radius:6px; background:#0c1527; color:white; border:1px solid #1e293b;">
+          <span class="badge badge-success" id="totalVentasDiaBadge" style="font-size:14px; padding:8px 12px;">Total: S/ 0.00</span>
+        </div>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>DNI</th>
+              <th>Estudiante</th>
+              <th>Monto Abonado</th>
+            </tr>
+          </thead>
+          <tbody id="tblVentasBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODALES -->
+  <div class="modal-overlay" id="modalAlumno">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrar Estudiante</h3>
+        <button onclick="cerrarModal('modalAlumno')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div><label>DNI *</label><input type="text" id="mDni" placeholder="Ej. 74839201"></div>
+        <div><label>Nombre y Apellidos *</label><input type="text" id="mNombre" placeholder="Ej. Juan Pérez"></div>
+        <div><label>Celular</label><input type="text" id="mTelf" placeholder="Ej. 987654321"></div>
+        <div><label>Horas del Paquete</label><input type="number" id="mHoras" oninput="autoCalcularPrecio(this.value)" placeholder="10"></div>
+        <div><label>Precio Total (S/ - S/30 por hora)</label><input type="number" step="any" id="mPrecio" placeholder="300.00"></div>
+        <div><label>Primer Abono (Opcional - S/)</label><input type="number" step="any" id="mAbonoInicial" placeholder="0.00"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="cerrarModal('modalAlumno')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarAlumno()">Guardar Alumno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalClase">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalClaseTitulo">Programar Conducción</h3>
+        <button onclick="cerrarModal('modalClase')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editClaseId">
+        <div>
+          <label>Buscar Alumno por DNI o Nombre</label>
+          <input type="text" id="searchAlumnoClaseInput" placeholder="Escribe DNI o apellido..." oninput="buscarAlumnoParaClase(this.value)">
+          <div id="resultadoBusquedaAlumno" style="max-height:100px; overflow-y:auto; background:#060b17; border:1px solid #1e293b; border-radius:6px; margin-top:4px; display:none;"></div>
+          <input type="hidden" id="selectedDniClase">
+          <p id="txtAlumnoSeleccionadoInfo" style="font-size:12px; color:#38bdf8; font-weight:700; margin-top:4px;">Ningún alumno seleccionado</p>
+        </div>
+        <div>
+          <label>Profesor</label>
+          <select id="selInstructor">
+            <option value="Luigui">Luigui</option>
+            <option value="Gustavo">Gustavo</option>
+            <option value="Mora">Mora</option>
+            <option value="José Luis">José Luis</option>
+            <option value="Luis">Luis</option>
+            <option value="Antonio">Antonio</option>
+            <option value="Américo">Américo</option>
+            <option value="Castañeda">Castañeda</option>
+            <option value="Anderson">Anderson</option>
+          </select>
+        </div>
+        <div><label>Fecha de Clase</label><input type="date" id="fechaClase"></div>
+        <div>
+          <label>Horas a Impartir (1 a 4 horas)</label>
+          <input type="number" id="duracionClase" value="1" min="1" max="4" oninput="actualizarOpcionesHorario(this.value)">
+        </div>
+        <div>
+          <label>Horario Disponible</label>
+          <select id="horaClase"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="cerrarModal('modalClase')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarClase()">Confirmar Turno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalAbonar">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Registrar Abono</h3>
+        <button onclick="cerrarModal('modalAbonar')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="txtInfoDeuda" style="font-weight: 600;"></p>
+        <div><label>Monto a Abonar (S/)</label><input type="number" step="any" id="montoAbono" placeholder="0.00"></div>
+        <div><label>Fecha</label><input type="date" id="fechaAbono"></div>
+        <div><label>Hora</label><input type="time" id="horaAbono"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="cerrarModal('modalAbonar')">Cancelar</button>
+        <button class="btn btn-success" onclick="confirmarAbono()">Registrar Pago</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalHistorialPagos">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 id="txtHistorialTitulo">Historial de Pagos</h3>
+        <button onclick="cerrarModal('modalHistorialPagos')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <table style="min-width:100%;">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Monto Abonado</th>
+            </tr>
+          </thead>
+          <tbody id="tblHistorialBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="cerrarModal('modalHistorialPagos')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalDescanso">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Asignar Descanso por Fecha</h3>
+        <button onclick="cerrarModal('modalDescanso')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label>Profesor</label>
+          <select id="descansoProfesor">
+            <option value="Luigui">Luigui</option>
+            <option value="Gustavo">Gustavo</option>
+            <option value="Mora">Mora</option>
+            <option value="José Luis">José Luis</option>
+            <option value="Luis">Luis</option>
+            <option value="Antonio">Antonio</option>
+            <option value="Américo">Américo</option>
+            <option value="Castañeda">Castañeda</option>
+            <option value="Anderson">Anderson</option>
+          </select>
+        </div>
+        <div><label>Fecha de Descanso</label><input type="date" id="descansoFecha"></div>
+        <button class="btn btn-info" onclick="guardarDescanso()">Registrar Descanso</button>
+        <div id="listaDescansos" style="max-height:140px; overflow-y:auto; font-size:13px; margin-top:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="cerrarModal('modalDescanso')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalDescansoFijo">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Descanso Semanal Permanente</h3>
+        <button onclick="cerrarModal('modalDescansoFijo')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <label>Profesor</label>
+          <select id="descansoFijoProfesor">
+            <option value="Luigui">Luigui</option>
+            <option value="Gustavo">Gustavo</option>
+            <option value="Mora">Mora</option>
+            <option value="José Luis">José Luis</option>
+            <option value="Luis">Luis</option>
+            <option value="Antonio">Antonio</option>
+            <option value="Américo">Américo</option>
+            <option value="Castañeda">Castañeda</option>
+            <option value="Anderson">Anderson</option>
+          </select>
+        </div>
+        <div>
+          <label>Día de Descanso Habitual</label>
+          <select id="descansoFijoDia">
+            <option value="0">Domingos</option>
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+            <option value="6">Sábados</option>
+          </select>
+        </div>
+        <button class="btn btn-warning" onclick="guardarDescansoFijo()">Guardar Regla Semanal</button>
+        <div id="listaDescansosFijos" style="max-height:140px; overflow-y:auto; font-size:13px; margin-top:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="cerrarModal('modalDescansoFijo')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, 
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAiVW8OXi6MDzeR-FzBdGNcpMou-JMLRJU",
+      authDomain: "simeon-car.firebaseapp.com",
+      projectId: "simeon-car",
+      storageBucket: "simeon-car.firebasestorage.app",
+      messagingSenderId: "519475859414",
+      appId: "1:519475859414:web:b9bafe98332846f8131e77",
+      measurementId: "G-750BDQ1JTF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const PROFESORES = ["Luigui", "Gustavo", "Mora", "José Luis", "Luis", "Antonio", "Américo", "Castañeda", "Anderson"];
+    
+    const HORARIOS_CIVILES = [
+      { id: "08:00", label: "8:00 a.m. - 9:00 a.m." },
+      { id: "09:00", label: "9:00 a.m. - 10:00 a.m." },
+      { id: "10:00", label: "10:00 a.m. - 11:00 a.m." },
+      { id: "11:00", label: "11:00 a.m. - 12:00 m." },
+      { id: "12:00", label: "12:00 m. - 1:00 p.m." },
+      { id: "13:00", label: "1:00 p.m. - 2:00 p.m." },
+      { id: "14:00", label: "2:00 p.m. - 3:00 p.m." },
+      { id: "15:00", label: "3:00 p.m. - 4:00 p.m." },
+      { id: "16:00", label: "4:00 p.m. - 5:00 p.m." },
+      { id: "17:00", label: "5:00 p.m. - 6:00 p.m." },
+      { id: "18:00", label: "6:00 p.m. - 7:00 p.m." },
+      { id: "19:00", label: "7:00 p.m. - 8:00 p.m." }
+    ];
+
+    let alumnos = [];
+    let clases = [];
+    let descansos = [];
+    let descansosFijos = [];
+    let dniAbonoSeleccionado = null;
+
+    let paginaActualAlumnos = 1;
+    let paginaActualPagos = 1;
+    const itemsPorPagina = 5;
+
+    // Carga inicial optimizada (Una sola lectura en memoria)
+    async function cargarDatosIniciales() {
+      try {
+        const [snapAlumnos, snapClases, snapDescansos, snapDescansosFijos] = await Promise.all([
+          getDocs(collection(db, "alumnos")),
+          getDocs(collection(db, "clases")),
+          getDocs(collection(db, "descansos")),
+          getDocs(collection(db, "descansosFijos"))
+        ]);
+
+        alumnos = snapAlumnos.docs.map(d => d.data());
+        alumnos.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+        clases = snapClases.docs.map(d => d.data());
+        descansos = snapDescansos.docs.map(d => d.data());
+        descansosFijos = snapDescansosFijos.docs.map(d => d.data());
+
+        renderAlumnos();
+        renderPagos();
+        renderClases();
+        renderHoy();
+        renderExcelProfesores();
+        renderDescansos();
+        renderDescansosFijos();
+        renderVentasDia();
+      } catch (err) {
+        console.error("Error al cargar datos iniciales:", err);
+      }
+    }
+
+    window.toggleSidebar = function(abrir) {
+      document.getElementById('sidebarNav').classList.toggle('open', abrir);
+      document.getElementById('sidebarOverlay').classList.toggle('active', abrir);
+    };
+
+    window.cambiarPestana = function(targetId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(targetId));
+      });
+      document.getElementById(targetId).classList.add('active');
+      window.toggleSidebar(false);
+      if(targetId === 'tabVentas') renderVentasDia();
+    };
+
+    window.abrirModal = id => document.getElementById(id).classList.add('active');
+    window.cerrarModal = id => document.getElementById(id).classList.remove('active');
+
+    window.abrirModalNuevoAlumno = function() {
+      document.getElementById('mDni').value = '';
+      document.getElementById('mNombre').value = '';
+      document.getElementById('mTelf').value = '';
+      document.getElementById('mHoras').value = '';
+      document.getElementById('mPrecio').value = '';
+      document.getElementById('mAbonoInicial').value = '';
+      abrirModal('modalAlumno');
+    };
+
+    window.autoCalcularPrecio = function(h) {
+      const v = Number(h);
+      document.getElementById('mPrecio').value = v > 0 ? v * 30 : '';
+    };
+
+    window.guardarAlumno = async function() {
+      const dni = document.getElementById('mDni').value.trim();
+      const nombre = document.getElementById('mNombre').value.trim();
+      const telf = document.getElementById('mTelf').value.trim();
+      const horas = Number(document.getElementById('mHoras').value);
+      const precio = Number(document.getElementById('mPrecio').value);
+      const abono = Number(document.getElementById('mAbonoInicial').value) || 0;
+
+      if (!dni || !nombre || isNaN(horas) || isNaN(precio)) return alert('Completa los campos obligatorios');
+
+      const pagos = abono > 0 ? [{ monto: abono, fecha: obtenerFechaActual(), hora: obtenerHoraActual() }] : [];
+
+      const nuevoAlumno = {
+        dni, nombre, telf,
+        horasTotal: horas, horasRestantes: horas,
+        precioTotal: precio, totalAbonado: abono,
+        pagos
+      };
+
+      await setDoc(doc(db, "alumnos", dni), nuevoAlumno);
+
+      // Actualizar memoria local al instante
+      const idx = alumnos.findIndex(a => a.dni === dni);
+      if (idx >= 0) alumnos[idx] = nuevoAlumno;
+      else alumnos.push(nuevoAlumno);
+      alumnos.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+      renderAlumnos();
+      renderPagos();
+      renderVentasDia();
+
+      document.getElementById('mDni').value = '';
+      document.getElementById('mNombre').value = '';
+      document.getElementById('mTelf').value = '';
+      document.getElementById('mHoras').value = '';
+      document.getElementById('mPrecio').value = '';
+      document.getElementById('mAbonoInicial').value = '';
+      cerrarModal('modalAlumno');
+    };
+
+    window.eliminarAlumno = async function(dni) {
+      if (!confirm('¿Eliminar al estudiante del registro general?')) return;
+      await deleteDoc(doc(db, "alumnos", dni));
+      alumnos = alumnos.filter(a => a.dni !== dni);
+      renderAlumnos();
+      renderPagos();
+    };
+
+    window.buscarAlumnoParaClase = function(val) {
+      const q = val.toLowerCase().trim();
+      const cont = document.getElementById('resultadoBusquedaAlumno');
+      if (!q) { cont.style.display = 'none'; return; }
+      
+      const res = alumnos.filter(a => (a.nombre || '').toLowerCase().includes(q) || (a.dni || '').includes(q));
+      cont.innerHTML = '';
+      if (res.length === 0) {
+        cont.innerHTML = '<div style="padding:6px; font-size:12px; color:#94a3b8;">No encontrado</div>';
+      } else {
+        res.slice(0, 5).forEach(a => {
+          const item = document.createElement('div');
+          item.style.cssText = 'padding:6px 10px; cursor:pointer; font-size:12px; border-bottom:1px solid #1e293b;';
+          item.innerHTML = `<strong>${a.dni}</strong> - ${a.nombre} (${a.horasRestantes}h disp.)`;
+          item.onclick = () => {
+            document.getElementById('selectedDniClase').value = a.dni;
+            document.getElementById('txtAlumnoSeleccionadoInfo').innerText = `Seleccionado: ${a.nombre} (${a.horasRestantes}h disp.)`;
+            document.getElementById('searchAlumnoClaseInput').value = `${a.dni} - ${a.nombre}`;
+            cont.style.display = 'none';
+          };
+          cont.appendChild(item);
+        });
+      }
+      cont.style.display = 'block';
+    };
+
+    window.actualizarOpcionesHorario = function(duracion) {
+      const dur = Number(duracion) || 1;
+      const select = document.getElementById('horaClase');
+      select.innerHTML = '';
+
+      HORARIOS_CIVILES.forEach((h, index) => {
+        const horasOcupadas = calcularRangoHoras(h.id, dur);
+        if (horasOcupadas.includes("13:00") || (index + dur > HORARIOS_CIVILES.length)) return;
+
+        const horaFinIndex = index + dur;
+        const horaFinLabel = horaFinIndex < HORARIOS_CIVILES.length 
+          ? HORARIOS_CIVILES[horaFinIndex].label.split(' - ')[0] 
+          : "8:00 p.m.";
+          
+        const labelCompleto = `${h.label.split(' - ')[0]} - ${horaFinLabel}`;
+        select.innerHTML += `<option value="${h.id}">${labelCompleto}</option>`;
+      });
+    };
+
+    window.abrirModalClase = function(claseParaEditar = null) {
+      document.getElementById('editClaseId').value = '';
+      document.getElementById('searchAlumnoClaseInput').value = '';
+      document.getElementById('selectedDniClase').value = '';
+      document.getElementById('txtAlumnoSeleccionadoInfo').innerText = 'Ningún alumno seleccionado';
+      document.getElementById('fechaClase').value = obtenerFechaActual();
+      document.getElementById('duracionClase').value = '1';
+      document.getElementById('modalClaseTitulo').innerText = 'Programar Conducción';
+      actualizarOpcionesHorario(1);
+
+      if (claseParaEditar) {
+        document.getElementById('modalClaseTitulo').innerText = 'Editar Clase de Manejo';
+        document.getElementById('editClaseId').value = claseParaEditar.id;
+        document.getElementById('selectedDniClase').value = claseParaEditar.dni;
+        document.getElementById('searchAlumnoClaseInput').value = `${claseParaEditar.dni} - ${claseParaEditar.nombre}`;
+        document.getElementById('txtAlumnoSeleccionadoInfo').innerText = `Seleccionado: ${claseParaEditar.nombre}`;
+        document.getElementById('selInstructor').value = claseParaEditar.profesor;
+        document.getElementById('fechaClase').value = claseParaEditar.fecha;
+        document.getElementById('duracionClase').value = claseParaEditar.duracion;
+        actualizarOpcionesHorario(claseParaEditar.duracion);
+        document.getElementById('horaClase').value = claseParaEditar.hora;
+      }
+      abrirModal('modalClase');
+    };
+
+    window.guardarClase = async function() {
+      const editId = document.getElementById('editClaseId').value;
+      const dni = document.getElementById('selectedDniClase').value;
+      const profesor = document.getElementById('selInstructor').value;
+      const fecha = document.getElementById('fechaClase').value;
+      const hora = document.getElementById('horaClase').value;
+      const duracion = Number(document.getElementById('duracionClase').value);
+
+      if (!dni || !fecha || !hora || isNaN(duracion)) return alert('Por favor busca y selecciona un alumno válido.');
+
+      const nuevasHorasOcupadas = calcularRangoHoras(hora, duracion);
+      if (nuevasHorasOcupadas.includes("13:00")) {
+        return alert('De 1:00 p.m. a 2:00 p.m. es hora de almuerzo de instructores.');
+      }
+
+      if (esProfesorEnDescanso(profesor, fecha)) {
+        return alert(`El profesor ${profesor} está de descanso el día ${fecha}.`);
+      }
+
+      const al = alumnos.find(a => a.dni === dni);
+      const horasDisponibles = Number(al ? al.horasRestantes : 0);
+
+      let horasCompensadas = horasDisponibles;
+      if (editId) {
+        const clasePrevia = clases.find(x => x.id === editId);
+        if (clasePrevia) horasCompensadas += Number(clasePrevia.duracion);
+      }
+
+      if (horasCompensadas < duracion) {
+        return alert(`El estudiante solo tiene ${horasCompensadas} hora(s) disponible(s).`);
+      }
+
+      for (let c of clases.filter(x => x.profesor === profesor && x.fecha === fecha && x.id !== editId)) {
+        const horasExistentes = calcularRangoHoras(c.hora, Number(c.duracion));
+        const hayChoque = nuevasHorasOcupadas.some(nh => horasExistentes.includes(nh));
+        if (hayChoque) {
+          return alert(`El profesor ${profesor} ya tiene asignada una clase en este horario.`);
+        }
+      }
+
+      const claseId = editId || `${Date.now()}`;
+      const nuevaClase = {
+        id: claseId, dni: al.dni, nombre: al.nombre,
+        celular: al.telf, profesor, fecha, hora, duracion
+      };
+
+      await setDoc(doc(db, "clases", claseId), nuevaClase);
+      await updateDoc(doc(db, "alumnos", al.dni), {
+        horasRestantes: horasCompensadas - duracion
+      });
+
+      // Actualizar memoria local
+      al.horasRestantes = horasCompensadas - duracion;
+      const cIdx = clases.findIndex(x => x.id === claseId);
+      if (cIdx >= 0) clases[cIdx] = nuevaClase;
+      else clases.push(nuevaClase);
+
+      renderAlumnos();
+      renderClases();
+      renderHoy();
+      renderExcelProfesores();
+
+      cerrarModal('modalClase');
+    };
+
+    window.editarClase = function(id) {
+      const c = clases.find(x => x.id === id);
+      if (c) abrirModalClase(c);
+    };
+
+    window.eliminarClase = async function(id) {
+      const c = clases.find(x => x.id === id);
+      if (!c || !confirm('¿Cancelar clase y reintegrar horas al estudiante?')) return;
+
+      const al = alumnos.find(a => a.dni === c.dni);
+      if (al) {
+        al.horasRestantes = Number(al.horasRestantes) + Number(c.duracion);
+        await updateDoc(doc(db, "alumnos", al.dni), {
+          horasRestantes: al.horasRestantes
+        });
+      }
+      await deleteDoc(doc(db, "clases", id));
+      clases = clases.filter(x => x.id !== id);
+
+      renderAlumnos();
+      renderClases();
+      renderHoy();
+      renderExcelProfesores();
+    };
+
+    window.abrirModalAbono = function(dni) {
+      const al = alumnos.find(a => a.dni === dni);
+      if (!al) return;
+      dniAbonoSeleccionado = dni;
+      const deuda = Number(al.precioTotal) - Number(al.totalAbonado);
+      document.getElementById('txtInfoDeuda').innerHTML = `${al.nombre} - Saldo Pendiente: <span style="color:#f87171;">S/ ${deuda.toFixed(2)}</span>`;
+      document.getElementById('montoAbono').value = '';
+      document.getElementById('fechaAbono').value = obtenerFechaActual();
+      document.getElementById('horaAbono').value = obtenerHoraActual();
+      abrirModal('modalAbonar');
+    };
+
+    window.confirmarAbono = async function() {
+      const monto = Number(document.getElementById('montoAbono').value);
+      const fecha = document.getElementById('fechaAbono').value;
+      const hora = document.getElementById('horaAbono').value;
+      const al = alumnos.find(a => a.dni === dniAbonoSeleccionado);
+
+      if (isNaN(monto) || monto <= 0) return alert('Por favor ingresa un monto válido');
+
+      const deudaPendiente = Number(al.precioTotal) - Number(al.totalAbonado);
+      if (monto > deudaPendiente) {
+        return alert(`El monto ingresado (S/ ${monto}) supera la deuda actual (S/ ${deudaPendiente.toFixed(2)})`);
+      }
+
+      const pagos = al.pagos || [];
+      pagos.push({ monto, fecha, hora });
+
+      await updateDoc(doc(db, "alumnos", al.dni), {
+        totalAbonado: Number(al.totalAbonado) + monto,
+        pagos
+      });
+
+      al.totalAbonado = Number(al.totalAbonado) + monto;
+      al.pagos = pagos;
+
+      renderPagos();
+      renderVentasDia();
+
+      document.getElementById('montoAbono').value = '';
+      cerrarModal('modalAbonar');
+    };
+
+    window.verHistorialPagos = function(dni) {
+      const al = alumnos.find(a => a.dni === dni);
+      if (!al) return;
+
+      document.getElementById('txtHistorialTitulo').innerText = `Historial: ${al.nombre}`;
+      const tb = document.getElementById('tblHistorialBody');
+      tb.innerHTML = '';
+
+      if (!al.pagos || al.pagos.length === 0) {
+        tb.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#94a3b8;">Sin pagos registrados</td></tr>';
+      } else {
+        al.pagos.forEach(p => {
+          tb.innerHTML += `
+            <tr>
+              <td>${p.fecha}</td>
+              <td>${p.hora}</td>
+              <td><strong>S/ ${Number(p.monto).toFixed(2)}</strong></td>
+            </tr>`;
+        });
+      }
+      abrirModal('modalHistorialPagos');
+    };
+
+    window.abrirModalDescanso = function() {
+      document.getElementById('descansoFecha').value = obtenerFechaActual();
+      abrirModal('modalDescanso');
+    };
+
+    window.guardarDescanso = async function() {
+      const profesor = document.getElementById('descansoProfesor').value;
+      const fecha = document.getElementById('descansoFecha').value;
+      if (!fecha) return alert('Selecciona una fecha');
+
+      const id = `${profesor}_${fecha}`;
+      const nuevoDescanso = { id, profesor, fecha };
+      await setDoc(doc(db, "descansos", id), nuevoDescanso);
+      
+      const dIdx = descansos.findIndex(d => d.id === id);
+      if (dIdx >= 0) descansos[dIdx] = nuevoDescanso;
+      else descansos.push(nuevoDescanso);
+
+      renderDescansos();
+      renderExcelProfesores();
+      document.getElementById('descansoFecha').value = '';
+    };
+
+    window.eliminarDescanso = async function(id) {
+      await deleteDoc(doc(db, "descansos", id));
+      descansos = descansos.filter(d => d.id !== id);
+      renderDescansos();
+      renderExcelProfesores();
+    };
+
+    window.abrirModalDescansoFijo = function() {
+      abrirModal('modalDescansoFijo');
+    };
+
+    window.guardarDescansoFijo = async function() {
+      const profesor = document.getElementById('descansoFijoProfesor').value;
+      const diaSemana = Number(document.getElementById('descansoFijoDia').value);
+      const id = `${profesor}_fijo`;
+      const nuevoFijo = { id, profesor, diaSemana };
+      await setDoc(doc(db, "descansosFijos", id), nuevoFijo);
+      
+      const fIdx = descansosFijos.findIndex(d => d.id === id);
+      if (fIdx >= 0) descansosFijos[fIdx] = nuevoFijo;
+      else descansosFijos.push(nuevoFijo);
+
+      renderDescansosFijos();
+      renderExcelProfesores();
+    };
+
+    window.eliminarDescansoFijo = async function(id) {
+      await deleteDoc(doc(db, "descansosFijos", id));
+      descansosFijos = descansosFijos.filter(d => d.id !== id);
+      renderDescansosFijos();
+      renderExcelProfesores();
+    };
+
+    function esProfesorEnDescanso(profesor, fechaStr) {
+      if (descansos.some(d => d.profesor === profesor && d.fecha === fechaStr)) return true;
+      const fechaObj = new Date(fechaStr + "T00:00:00");
+      const diaSemana = fechaObj.getDay();
+      return descansosFijos.some(df => df.profesor === profesor && df.diaSemana === diaSemana);
+    }
+
+    function calcularRangoHoras(horaInicio, duracion) {
+      const horasOcupadas = [];
+      const [h] = horaInicio.split(':').map(Number);
+      for (let i = 0; i < duracion; i++) {
+        const hh = String(h + i).padStart(2, '0');
+        horasOcupadas.push(`${hh}:00`);
+      }
+      return horasOcupadas;
+    }
+
+    window.filtrarAlumnos = function() { paginaActualAlumnos = 1; renderAlumnos(); };
+    window.cambiarPaginaAlumnos = function(dir) { paginaActualAlumnos += dir; renderAlumnos(); };
+
+    function renderAlumnos() {
+      const q = (document.getElementById('buscarAlumno').value || '').toLowerCase().trim();
+      const tb = document.getElementById('tblAlumnosBody');
+      tb.innerHTML = '';
+
+      const filtrados = alumnos.filter(a => (a.nombre || '').toLowerCase().includes(q) || (a.dni || '').includes(q));
+      const totalPaginas = Math.max(1, Math.ceil(filtrados.length / itemsPorPagina));
+
+      if (paginaActualAlumnos > totalPaginas) paginaActualAlumnos = totalPaginas;
+      if (paginaActualAlumnos < 1) paginaActualAlumnos = 1;
+
+      const inicio = (paginaActualAlumnos - 1) * itemsPorPagina;
+      const paginados = filtrados.slice(inicio, inicio + itemsPorPagina);
+
+      paginados.forEach(a => {
+        const d = Number(a.precioTotal) - Number(a.totalAbonado);
+        tb.innerHTML += `
+          <tr>
+            <td><strong>${a.dni}</strong></td>
+            <td>${a.nombre}</td>
+            <td>${a.telf || '-'}</td>
+            <td><span class="badge badge-hours">${a.horasRestantes} / ${a.horasTotal} hrs</span></td>
+            <td>S/ ${Number(a.precioTotal).toFixed(2)}</td>
+            <td><span class="badge ${d > 0 ? 'badge-danger' : 'badge-success'}">S/ ${Number(d).toFixed(2)}</span></td>
+            <td><button class="btn btn-danger" onclick="eliminarAlumno('${a.dni}')">Eliminar</button></td>
+          </tr>`;
+      });
+
+      document.getElementById('txtPaginaAlumnos').innerText = `Página ${paginaActualAlumnos} / ${totalPaginas}`;
+      document.getElementById('btnPrevAlumnos').disabled = (paginaActualAlumnos <= 1);
+      document.getElementById('btnNextAlumnos').disabled = (paginaActualAlumnos >= totalPaginas);
+    }
+
+    window.filtrarPagos = function() { paginaActualPagos = 1; renderPagos(); };
+    window.cambiarPaginaPagos = function(dir) { paginaActualPagos += dir; renderPagos(); };
+
+    function renderPagos() {
+      const q = (document.getElementById('buscarPago').value || '').toLowerCase().trim();
+      const tb = document.getElementById('tblPagosBody');
+      tb.innerHTML = '';
+
+      const filtrados = alumnos.filter(a => (a.nombre || '').toLowerCase().includes(q) || (a.dni || '').includes(q));
+      const totalPaginas = Math.max(1, Math.ceil(filtrados.length / itemsPorPagina));
+
+      if (paginaActualPagos > totalPaginas) paginaActualPagos = totalPaginas;
+      if (paginaActualPagos < 1) paginaActualPagos = 1;
+
+      const inicio = (paginaActualPagos - 1) * itemsPorPagina;
+      const paginados = filtrados.slice(inicio, inicio + itemsPorPagina);
+
+      paginados.forEach(a => {
+        const d = Number(a.precioTotal) - Number(a.totalAbonado);
+        tb.innerHTML += `
+          <tr>
+            <td><strong>${a.dni}</strong></td>
+            <td>${a.nombre}</td>
+            <td>S/ ${Number(a.precioTotal).toFixed(2)}</td>
+            <td>S/ ${Number(a.totalAbonado).toFixed(2)}</td>
+            <td><span class="badge ${d > 0 ? 'badge-danger' : 'badge-success'}">Falta: S/ ${Number(d).toFixed(2)}</span></td>
+            <td style="display:flex; gap:6px;">
+              <button class="btn btn-success" onclick="abrirModalAbono('${a.dni}')">+ Abonar</button>
+              <button class="btn btn-info" onclick="verHistorialPagos('${a.dni}')">Historial</button>
+            </td>
+          </tr>`;
+      });
+
+      document.getElementById('txtPaginaPagos').innerText = `Página ${paginaActualPagos} / ${totalPaginas}`;
+      document.getElementById('btnPrevPagos').disabled = (paginaActualPagos <= 1);
+      document.getElementById('btnNextPagos').disabled = (paginaActualPagos >= totalPaginas);
+    }
+
+    function renderClases() {
+      const tb = document.getElementById('tblClasesBody');
+      tb.innerHTML = '';
+      clases.slice().reverse().forEach(c => {
+        const hIndex = HORARIOS_CIVILES.findIndex(x => x.id === c.hora);
+        const finIndex = hIndex + Number(c.duracion);
+        const finLabel = finIndex < HORARIOS_CIVILES.length ? HORARIOS_CIVILES[finIndex].label.split(' - ')[0] : '8:00 p.m.';
+        const etiquetaHorario = hIndex >= 0 ? `${HORARIOS_CIVILES[hIndex].label.split(' - ')[0]} - ${finLabel}` : c.hora;
+
+        tb.innerHTML += `
+          <tr>
+            <td>${c.fecha}</td>
+            <td><strong>${etiquetaHorario}</strong></td>
+            <td>${c.dni}</td>
+            <td>${c.nombre}</td>
+            <td>Prof. ${c.profesor}</td>
+            <td>${c.duracion} hr(s)</td>
+            <td style="display:flex; gap:6px;">
+              <button class="btn btn-info" onclick="editarClase('${c.id}')">Editar</button>
+              <button class="btn btn-danger" onclick="eliminarClase('${c.id}')">Cancelar</button>
+            </td>
+          </tr>`;
+      });
+    }
+
+    window.renderExcelProfesores = function() {
+      const f = document.getElementById('fechaFiltroExcel').value || obtenerFechaActual();
+      const tb = document.getElementById('gridProfesoresBody');
+      tb.innerHTML = '';
+
+      HORARIOS_CIVILES.forEach(item => {
+        let r = `<tr><td style="font-weight:700; color:#38bdf8;">${item.label}</td>`;
+        
+        if (item.id === "13:00") {
+          r += `<td colspan="${PROFESORES.length}" class="cell-almuerzo">🍽️ REFRIGERIO / ALMUERZO GENERAL</td></tr>`;
+          tb.innerHTML += r;
+          return;
+        }
+
+        PROFESORES.forEach(p => {
+          if (esProfesorEnDescanso(p, f)) {
+            r += `<td class="cell-descanso">DESCANSO</td>`;
+          } else {
+            const claseActiva = clases.find(c => {
+              if (c.profesor === p && c.fecha === f) {
+                const horasOcupadas = calcularRangoHoras(c.hora, Number(c.duracion));
+                return horasOcupadas.includes(item.id);
+              }
+              return false;
+            });
+
+            if (claseActiva) {
+              r += `<td class="cell-ocupado">🚗 ${claseActiva.nombre}</td>`;
+            } else {
+              r += `<td class="cell-libre">LIBRE</td>`;
+            }
+          }
+        });
+        r += '</tr>';
+        tb.innerHTML += r;
+      });
+    };
+
+    function renderHoy() {
+      const hoy = obtenerFechaActual();
+      document.getElementById('fechaActualTxt').innerText = `Hoy: ${hoy}`;
+      const tb = document.getElementById('tblHoyBody');
+      tb.innerHTML = '';
+      const filtradas = clases.filter(c => c.fecha === hoy);
+
+      if (filtradas.length === 0) {
+        tb.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:18px;">Sin clases programadas para hoy</td></tr>';
+        return;
+      }
+
+      filtradas.sort((a,b) => a.hora.localeCompare(b.hora)).forEach(c => {
+        const hIndex = HORARIOS_CIVILES.findIndex(x => x.id === c.hora);
+        const finIndex = hIndex + Number(c.duracion);
+        const finLabel = finIndex < HORARIOS_CIVILES.length ? HORARIOS_CIVILES[finIndex].label.split(' - ')[0] : '8:00 p.m.';
+        const etiquetaHorario = hIndex >= 0 ? `${HORARIOS_CIVILES[hIndex].label.split(' - ')[0]} - ${finLabel}` : c.hora;
+
+        tb.innerHTML += `
+          <tr>
+            <td><strong>${etiquetaHorario}</strong></td>
+            <td>${c.dni}</td>
+            <td>${c.nombre}</td>
+            <td>${c.celular || '-'}</td>
+            <td>Prof. ${c.profesor}</td>
+            <td>${c.duracion} hr(s)</td>
+          </tr>`;
+      });
+    }
+
+    window.renderVentasDia = function() {
+      const fechaFiltro = document.getElementById('filtroFechaVentas').value || obtenerFechaActual();
+      const tb = document.getElementById('tblVentasBody');
+      tb.innerHTML = '';
+      let totalVendido = 0;
+
+      alumnos.forEach(a => {
+        if (a.pagos && a.pagos.length > 0) {
+          a.pagos.filter(p => p.fecha === fechaFiltro).forEach(p => {
+            totalVendido += Number(p.monto);
+            tb.innerHTML += `
+              <tr>
+                <td><strong>${p.hora}</strong></td>
+                <td>${a.dni}</td>
+                <td>${a.nombre}</td>
+                <td style="color:#34d399; font-weight:700;">S/ ${Number(p.monto).toFixed(2)}</td>
+              </tr>`;
+          });
+        }
+      });
+
+      if (totalVendido === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:16px;">Sin pagos registrados en esta fecha</td></tr>';
+      }
+      document.getElementById('totalVentasDiaBadge').innerText = `Total: S/ ${totalVendido.toFixed(2)}`;
+    };
+
+    function renderDescansos() {
+      const cont = document.getElementById('listaDescansos');
+      cont.innerHTML = '';
+      descansos.forEach(d => {
+        cont.innerHTML += `
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px; padding:6px; background:#060b17; border-radius:4px;">
+            <span><strong>${d.profesor}</strong> - ${d.fecha}</span>
+            <button style="color:#f87171; border:none; background:none; cursor:pointer;" onclick="eliminarDescanso('${d.id}')">✕</button>
+          </div>`;
+      });
+    }
+
+    function renderDescansosFijos() {
+      const cont = document.getElementById('listaDescansosFijos');
+      cont.innerHTML = '';
+      const dias = ["Domingos", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábados"];
+      descansosFijos.forEach(df => {
+        cont.innerHTML += `
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px; padding:6px; background:#060b17; border-radius:4px;">
+            <span><strong>${df.profesor}</strong>: Todos los ${dias[df.diaSemana]}</span>
+            <button style="color:#f87171; border:none; background:none; cursor:pointer;" onclick="eliminarDescansoFijo('${df.id}')">✕</button>
+          </div>`;
+      });
+    }
+
+    function obtenerFechaActual() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function obtenerHoraActual() {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    const fechaHoy = obtenerFechaActual();
+    document.getElementById('fechaFiltroExcel').value = fechaHoy;
+    document.getElementById('filtroFechaVentas').value = fechaHoy;
+
+    cargarDatosIniciales();
+  </script>
+</body>
+</html>
