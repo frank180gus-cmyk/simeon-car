@@ -150,6 +150,7 @@
       <button class="nav-btn" onclick="cambiarPestana('tabProfesores')">📊 Horarios Profesores</button>
       <button class="nav-btn" onclick="cambiarPestana('tabClases')">🕒 Agenda de Clases</button>
       <button class="nav-btn" onclick="cambiarPestana('tabHoy')">📅 Alumnos de Hoy</button>
+      <button class="nav-btn" onclick="cambiarPestana('tabHistorialAlumno')">📋 Historial de Alumno</button>
       <button class="nav-btn" onclick="cambiarPestana('tabVentas')">📈 Ventas / Caja de Hoy</button>
     </nav>
   </aside>
@@ -279,7 +280,7 @@
       </div>
     </section>
 
-    <!-- 5. HOY -->
+    <!-- 5. ALUMNOS DE HOY -->
     <section id="tabHoy" class="tab-pane">
       <div class="header-bar">
         <h2>Alumnos Programados para Hoy</h2>
@@ -295,10 +296,44 @@
               <th>Celular</th>
               <th>Profesor</th>
               <th>Duración</th>
+              <th>Control Asistencia</th>
             </tr>
           </thead>
           <tbody id="tblHoyBody"></tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- NUEVA PESTAÑA: HISTORIAL DE ALUMNO -->
+    <section id="tabHistorialAlumno" class="tab-pane">
+      <div class="header-bar">
+        <div>
+          <h2>Historial de Clases y Asistencia</h2>
+          <p style="font-size:12px; color:#94a3b8;">Consulta asistencias pasadas ordenadas por alumno (5 por página)</p>
+        </div>
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="buscarHistorialAlumno" placeholder="Buscar DNI o Nombre..." oninput="filtrarHistorialAlumnos()">
+        </div>
+      </div>
+      <div class="card-table">
+        <table>
+          <thead>
+            <tr>
+              <th>DNI</th>
+              <th>Nombre Completo (A-Z)</th>
+              <th>Celular</th>
+              <th>Horas Restantes</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tblHistorialAlumnosBody"></tbody>
+        </table>
+        <div class="pagination-bar">
+          <button class="btn btn-info" id="btnPrevHistorialAlumnos" onclick="cambiarPaginaHistorialAlumnos(-1)">Anterior</button>
+          <span id="txtPaginaHistorialAlumnos" style="font-size: 13px; font-weight: 700; color: #38bdf8;">Página 1 / 1</span>
+          <button class="btn btn-info" id="btnNextHistorialAlumnos" onclick="cambiarPaginaHistorialAlumnos(1)">Siguiente</button>
+        </div>
       </div>
     </section>
 
@@ -310,7 +345,7 @@
           <p style="font-size: 12px; color: #94a3b8;">Registro de todos los abonos y pagos percibidos en la fecha elegida</p>
         </div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <input type="date" id="filtroFechaVentas" onchange="renderVentasDia()" style="padding:8px; border-radius:6px; background:#0c1527; color:white; border:1px solid #1e293b;">
+<input type="date" id="filtroFechaVentas" onchange="renderVentasDia()" style="padding:8px; border-radius:6px; background:#0c1527; color: white; border:1px solid #1e293b;">
           <span class="badge badge-success" id="totalVentasDiaBadge" style="font-size:14px; padding:8px 12px;">Total: S/ 0.00</span>
         </div>
       </div>
@@ -338,11 +373,11 @@
         <button onclick="cerrarModal('modalAlumno')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
       </div>
       <div class="modal-body">
-        <div><label>DNI *</label><input type="text" id="mDni" placeholder="Ej. 74839201"></div>
+        <div><label>DNI (Opcional)</label><input type="text" id="mDni" placeholder="Ej. 74839201"></div>
         <div><label>Nombre y Apellidos *</label><input type="text" id="mNombre" placeholder="Ej. Juan Pérez"></div>
-        <div><label>Celular</label><input type="text" id="mTelf" placeholder="Ej. 987654321"></div>
-        <div><label>Horas del Paquete</label><input type="number" id="mHoras" oninput="autoCalcularPrecio(this.value)" placeholder="10"></div>
-        <div><label>Precio Total (S/ - S/30 por hora)</label><input type="number" step="any" id="mPrecio" placeholder="300.00"></div>
+        <div><label>Celular (Opcional)</label><input type="text" id="mTelf" placeholder="Ej. 987654321"></div>
+        <div><label>Horas del Paquete / Horas Libres *</label><input type="number" id="mHoras" oninput="autoCalcularPrecio(this.value)" placeholder="Ej. 1, 10, 15, 20"></div>
+        <div><label>Precio Total (S/)</label><input type="number" step="any" id="mPrecio" placeholder="0.00"></div>
         <div><label>Primer Abono (Opcional - S/)</label><input type="number" step="any" id="mAbonoInicial" placeholder="0.00"></div>
       </div>
       <div class="modal-footer">
@@ -437,6 +472,31 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" onclick="cerrarModal('modalHistorialPagos')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HISTORIAL DE ASISTENCIAS DE CLASE -->
+  <div class="modal-overlay" id="modalHistorialClases">
+    <div class="modal-box" style="max-width:560px;">
+      <div class="modal-header">
+        <h3 id="txtHistorialClasesTitulo">Historial de Asistencias</h3>
+        <button onclick="cerrarModal('modalHistorialClases')" style="border:none;background:none;color:white;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-body">
+        <table style="min-width:100%;">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora Llegada / Clase</th>
+              <th>Profesor</th>
+            </tr>
+          </thead>
+          <tbody id="tblHistorialClasesBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="cerrarModal('modalHistorialClases')">Cerrar</button>
       </div>
     </div>
   </div>
@@ -559,9 +619,9 @@
 
     let paginaActualAlumnos = 1;
     let paginaActualPagos = 1;
+    let paginaActualHistorialAlumnos = 1;
     const itemsPorPagina = 5;
 
-    // Carga inicial optimizada (Una sola lectura en memoria)
     async function cargarDatosIniciales() {
       try {
         const [snapAlumnos, snapClases, snapDescansos, snapDescansosFijos] = await Promise.all([
@@ -582,6 +642,7 @@
         renderPagos();
         renderClases();
         renderHoy();
+        renderHistorialAlumnos();
         renderExcelProfesores();
         renderDescansos();
         renderDescansosFijos();
@@ -604,6 +665,8 @@
       document.getElementById(targetId).classList.add('active');
       window.toggleSidebar(false);
       if(targetId === 'tabVentas') renderVentasDia();
+      if(targetId === 'tabHistorialAlumno') renderHistorialAlumnos();
+      if(targetId === 'tabHoy') renderHoy();
     };
 
     window.abrirModal = id => document.getElementById(id).classList.add('active');
@@ -621,18 +684,36 @@
 
     window.autoCalcularPrecio = function(h) {
       const v = Number(h);
-      document.getElementById('mPrecio').value = v > 0 ? v * 30 : '';
+      if (isNaN(v) || v <= 0) {
+        document.getElementById('mPrecio').value = '';
+        return;
+      }
+      if (v === 10) {
+        document.getElementById('mPrecio').value = 250;
+      } else if (v === 15) {
+        document.getElementById('mPrecio').value = 350;
+      } else if (v === 20) {
+        document.getElementById('mPrecio').value = 450;
+      } else {
+        document.getElementById('mPrecio').value = v * 30;
+      }
     };
 
     window.guardarAlumno = async function() {
-      const dni = document.getElementById('mDni').value.trim();
+      let dni = document.getElementById('mDni').value.trim();
       const nombre = document.getElementById('mNombre').value.trim();
       const telf = document.getElementById('mTelf').value.trim();
       const horas = Number(document.getElementById('mHoras').value);
       const precio = Number(document.getElementById('mPrecio').value);
       const abono = Number(document.getElementById('mAbonoInicial').value) || 0;
 
-      if (!dni || !nombre || isNaN(horas) || isNaN(precio)) return alert('Completa los campos obligatorios');
+      if (!nombre || isNaN(horas) || horas <= 0 || isNaN(precio)) {
+        return alert('El Nombre Completo, Horas y Precio son obligatorios.');
+      }
+
+      if (!dni) {
+        dni = `TEMP-${Date.now().toString().slice(-6)}`;
+      }
 
       const pagos = abono > 0 ? [{ monto: abono, fecha: obtenerFechaActual(), hora: obtenerHoraActual() }] : [];
 
@@ -640,12 +721,12 @@
         dni, nombre, telf,
         horasTotal: horas, horasRestantes: horas,
         precioTotal: precio, totalAbonado: abono,
-        pagos
+        pagos,
+        asistencias: []
       };
 
       await setDoc(doc(db, "alumnos", dni), nuevoAlumno);
 
-      // Actualizar memoria local al instante
       const idx = alumnos.findIndex(a => a.dni === dni);
       if (idx >= 0) alumnos[idx] = nuevoAlumno;
       else alumnos.push(nuevoAlumno);
@@ -653,14 +734,9 @@
 
       renderAlumnos();
       renderPagos();
+      renderHistorialAlumnos();
       renderVentasDia();
 
-      document.getElementById('mDni').value = '';
-      document.getElementById('mNombre').value = '';
-      document.getElementById('mTelf').value = '';
-      document.getElementById('mHoras').value = '';
-      document.getElementById('mPrecio').value = '';
-      document.getElementById('mAbonoInicial').value = '';
       cerrarModal('modalAlumno');
     };
 
@@ -670,6 +746,7 @@
       alumnos = alumnos.filter(a => a.dni !== dni);
       renderAlumnos();
       renderPagos();
+      renderHistorialAlumnos();
     };
 
     window.buscarAlumnoParaClase = function(val) {
@@ -785,7 +862,8 @@
       const claseId = editId || `${Date.now()}`;
       const nuevaClase = {
         id: claseId, dni: al.dni, nombre: al.nombre,
-        celular: al.telf, profesor, fecha, hora, duracion
+        celular: al.telf, profesor, fecha, hora, duracion,
+        asistencia: 'pendiente'
       };
 
       await setDoc(doc(db, "clases", claseId), nuevaClase);
@@ -793,7 +871,6 @@
         horasRestantes: horasCompensadas - duracion
       });
 
-      // Actualizar memoria local
       al.horasRestantes = horasCompensadas - duracion;
       const cIdx = clases.findIndex(x => x.id === claseId);
       if (cIdx >= 0) clases[cIdx] = nuevaClase;
@@ -802,6 +879,7 @@
       renderAlumnos();
       renderClases();
       renderHoy();
+      renderHistorialAlumnos();
       renderExcelProfesores();
 
       cerrarModal('modalClase');
@@ -829,7 +907,38 @@
       renderAlumnos();
       renderClases();
       renderHoy();
+      renderHistorialAlumnos();
       renderExcelProfesores();
+    };
+
+    window.marcarAsistencia = async function(claseId, estado) {
+      const c = clases.find(x => x.id === claseId);
+      if (!c) return;
+
+      c.asistencia = estado;
+      await updateDoc(doc(db, "clases", claseId), { asistencia: estado });
+
+      if (estado === 'asistio') {
+        const al = alumnos.find(a => a.dni === c.dni);
+        if (al) {
+          const asistencias = al.asistencias || [];
+          const existe = asistencias.some(a => a.claseId === c.id);
+          if (!existe) {
+            asistencias.push({
+              claseId: c.id,
+              fecha: c.fecha,
+              hora: c.hora,
+              profesor: c.profesor,
+              duracion: c.duracion
+            });
+            await updateDoc(doc(db, "alumnos", al.dni), { asistencias });
+            al.asistencias = asistencias;
+          }
+        }
+      }
+
+      renderHoy();
+      renderHistorialAlumnos();
     };
 
     window.abrirModalAbono = function(dni) {
@@ -879,7 +988,7 @@
       const al = alumnos.find(a => a.dni === dni);
       if (!al) return;
 
-      document.getElementById('txtHistorialTitulo').innerText = `Historial: ${al.nombre}`;
+      document.getElementById('txtHistorialTitulo').innerText = `Historial Pagos: ${al.nombre}`;
       const tb = document.getElementById('tblHistorialBody');
       tb.innerHTML = '';
 
@@ -896,6 +1005,37 @@
         });
       }
       abrirModal('modalHistorialPagos');
+    };
+
+    window.verHistorialClasesAlumno = function(dni) {
+      const al = alumnos.find(a => a.dni === dni);
+      if (!al) return;
+
+      document.getElementById('txtHistorialClasesTitulo').innerText = `Historial Asistencias: ${al.nombre}`;
+      const tb = document.getElementById('tblHistorialClasesBody');
+      tb.innerHTML = '';
+
+      const asistencias = al.asistencias || [];
+
+      if (asistencias.length === 0) {
+        tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:12px;">No cuenta con asistencias registradas</td></tr>';
+      } else {
+        asistencias.slice().reverse().forEach(item => {
+          const hIndex = HORARIOS_CIVILES.findIndex(x => x.id === item.hora);
+          const dur = Number(item.duracion) || 1;
+          const finIndex = hIndex + dur;
+          const finLabel = finIndex < HORARIOS_CIVILES.length ? HORARIOS_CIVILES[finIndex].label.split(' - ')[0] : '8:00 p.m.';
+          const horarioTexto = hIndex >= 0 ? `${HORARIOS_CIVILES[hIndex].label.split(' - ')[0]} - ${finLabel}` : item.hora;
+
+          tb.innerHTML += `
+            <tr>
+              <td>${item.fecha}</td>
+              <td><strong style="color:#38bdf8;">${horarioTexto}</strong></td>
+              <td>Prof. ${item.profesor}</td>
+            </tr>`;
+        });
+      }
+      abrirModal('modalHistorialClases');
     };
 
     window.abrirModalDescanso = function() {
@@ -992,7 +1132,7 @@
         const d = Number(a.precioTotal) - Number(a.totalAbonado);
         tb.innerHTML += `
           <tr>
-            <td><strong>${a.dni}</strong></td>
+            <td><strong>${a.dni.startsWith('TEMP-') ? 'S/DNI' : a.dni}</strong></td>
             <td>${a.nombre}</td>
             <td>${a.telf || '-'}</td>
             <td><span class="badge badge-hours">${a.horasRestantes} / ${a.horasTotal} hrs</span></td>
@@ -1028,7 +1168,7 @@
         const d = Number(a.precioTotal) - Number(a.totalAbonado);
         tb.innerHTML += `
           <tr>
-            <td><strong>${a.dni}</strong></td>
+            <td><strong>${a.dni.startsWith('TEMP-') ? 'S/DNI' : a.dni}</strong></td>
             <td>${a.nombre}</td>
             <td>S/ ${Number(a.precioTotal).toFixed(2)}</td>
             <td>S/ ${Number(a.totalAbonado).toFixed(2)}</td>
@@ -1045,6 +1185,42 @@
       document.getElementById('btnNextPagos').disabled = (paginaActualPagos >= totalPaginas);
     }
 
+    // GESTIÓN HISTORIAL ALUMNOS (5 POR PÁGINA)
+    window.filtrarHistorialAlumnos = function() { paginaActualHistorialAlumnos = 1; renderHistorialAlumnos(); };
+    window.cambiarPaginaHistorialAlumnos = function(dir) { paginaActualHistorialAlumnos += dir; renderHistorialAlumnos(); };
+
+    function renderHistorialAlumnos() {
+      const q = (document.getElementById('buscarHistorialAlumno').value || '').toLowerCase().trim();
+      const tb = document.getElementById('tblHistorialAlumnosBody');
+      tb.innerHTML = '';
+
+      const filtrados = alumnos.filter(a => (a.nombre || '').toLowerCase().includes(q) || (a.dni || '').includes(q));
+      const totalPaginas = Math.max(1, Math.ceil(filtrados.length / itemsPorPagina));
+
+      if (paginaActualHistorialAlumnos > totalPaginas) paginaActualHistorialAlumnos = totalPaginas;
+      if (paginaActualHistorialAlumnos < 1) paginaActualHistorialAlumnos = 1;
+
+      const inicio = (paginaActualHistorialAlumnos - 1) * itemsPorPagina;
+      const paginados = filtrados.slice(inicio, inicio + itemsPorPagina);
+
+      paginados.forEach(a => {
+        tb.innerHTML += `
+          <tr>
+            <td><strong>${a.dni.startsWith('TEMP-') ? 'S/DNI' : a.dni}</strong></td>
+            <td>${a.nombre}</td>
+            <td>${a.telf || '-'}</td>
+            <td><span class="badge badge-hours">${a.horasRestantes} / ${a.horasTotal} hrs</span></td>
+            <td>
+              <button class="btn btn-info" onclick="verHistorialClasesAlumno('${a.dni}')">📋 Ver Asistencias</button>
+            </td>
+          </tr>`;
+      });
+
+      document.getElementById('txtPaginaHistorialAlumnos').innerText = `Página ${paginaActualHistorialAlumnos} / ${totalPaginas}`;
+      document.getElementById('btnPrevHistorialAlumnos').disabled = (paginaActualHistorialAlumnos <= 1);
+      document.getElementById('btnNextHistorialAlumnos').disabled = (paginaActualHistorialAlumnos >= totalPaginas);
+    }
+
     function renderClases() {
       const tb = document.getElementById('tblClasesBody');
       tb.innerHTML = '';
@@ -1058,7 +1234,7 @@
           <tr>
             <td>${c.fecha}</td>
             <td><strong>${etiquetaHorario}</strong></td>
-            <td>${c.dni}</td>
+            <td>${c.dni.startsWith('TEMP-') ? 'S/DNI' : c.dni}</td>
             <td>${c.nombre}</td>
             <td>Prof. ${c.profesor}</td>
             <td>${c.duracion} hr(s)</td>
@@ -1116,7 +1292,7 @@
       const filtradas = clases.filter(c => c.fecha === hoy);
 
       if (filtradas.length === 0) {
-        tb.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:18px;">Sin clases programadas para hoy</td></tr>';
+        tb.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:18px;">Sin clases programadas para hoy</td></tr>';
         return;
       }
 
@@ -1126,14 +1302,28 @@
         const finLabel = finIndex < HORARIOS_CIVILES.length ? HORARIOS_CIVILES[finIndex].label.split(' - ')[0] : '8:00 p.m.';
         const etiquetaHorario = hIndex >= 0 ? `${HORARIOS_CIVILES[hIndex].label.split(' - ')[0]} - ${finLabel}` : c.hora;
 
+        let botonesAsistencia = '';
+        if (c.asistencia === 'asistio') {
+          botonesAsistencia = `<span class="badge badge-success">✓ Asistió</span>`;
+        } else if (c.asistencia === 'no_asistio') {
+          botonesAsistencia = `<span class="badge badge-danger">✗ No Asistió</span>`;
+        } else {
+          botonesAsistencia = `
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-success" style="padding:4px 8px; font-size:11px;" onclick="marcarAsistencia('${c.id}', 'asistio')">Asistió</button>
+              <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="marcarAsistencia('${c.id}', 'no_asistio')">No asistió</button>
+            </div>`;
+        }
+
         tb.innerHTML += `
           <tr>
             <td><strong>${etiquetaHorario}</strong></td>
-            <td>${c.dni}</td>
+            <td>${c.dni.startsWith('TEMP-') ? 'S/DNI' : c.dni}</td>
             <td>${c.nombre}</td>
             <td>${c.celular || '-'}</td>
             <td>Prof. ${c.profesor}</td>
             <td>${c.duracion} hr(s)</td>
+            <td>${botonesAsistencia}</td>
           </tr>`;
       });
     }
@@ -1151,7 +1341,7 @@
             tb.innerHTML += `
               <tr>
                 <td><strong>${p.hora}</strong></td>
-                <td>${a.dni}</td>
+                <td>${a.dni.startsWith('TEMP-') ? 'S/DNI' : a.dni}</td>
                 <td>${a.nombre}</td>
                 <td style="color:#34d399; font-weight:700;">S/ ${Number(p.monto).toFixed(2)}</td>
               </tr>`;
